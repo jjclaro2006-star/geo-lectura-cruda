@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Muestra de ubicación</title>
+<style>
+  :root {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #f4f6f2;
+    --surface: #ffffff;
+    --border: #d7ddd2;
+    --text: #1a1f19;
+    --text-muted: #5c6456;
+    --accent: #2f6f5e;
+    --accent-contrast: #ffffff;
+    --ok-bg: #e4f3e6;
+    --ok-text: #1f6b3c;
+    --warn-bg: #fbeed9;
+    --warn-text: #8a5a15;
+    --danger-bg: #fbe6e3;
+    --danger-text: #96352c;
+    --mono-bg: #0f130d;
+    --mono-text: #cdeec2;
+    --mono-border: #26311f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10130f;
+      --surface: #181c15;
+      --border: #2b3226;
+      --text: #e9ede5;
+      --text-muted: #9aa392;
+      --accent: #62c3a4;
+      --accent-contrast: #06140d;
+      --ok-bg: #163524;
+      --ok-text: #7fdda0;
+      --warn-bg: #3a2c12;
+      --warn-text: #e3ac57;
+      --danger-bg: #3a1e1b;
+      --danger-text: #ec8b81;
+      --mono-bg: #060905;
+      --mono-text: #bdeeb0;
+      --mono-border: #1c2417;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10130f;
+    --surface: #181c15;
+    --border: #2b3226;
+    --text: #e9ede5;
+    --text-muted: #9aa392;
+    --accent: #62c3a4;
+    --accent-contrast: #06140d;
+    --ok-bg: #163524;
+    --ok-text: #7fdda0;
+    --warn-bg: #3a2c12;
+    --warn-text: #e3ac57;
+    --danger-bg: #3a1e1b;
+    --danger-text: #ec8b81;
+    --mono-bg: #060905;
+    --mono-text: #bdeeb0;
+    --mono-border: #1c2417;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-inline: 16px;
+    padding-block: 20px 40px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  [hidden] { display: none !important; }
+  .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  header {
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 1.28rem;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  .subtitulo {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    line-height: 1.1;
+  }
+  .pill.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn-text); }
+  .pill.danger { background: var(--danger-bg); color: var(--danger-text); }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+  .diag-nota {
+    margin: 10px 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  button.principal {
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.principal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  button.principal:focus-visible,
+  button.secundaria:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .params {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+
+  .readout {
+    background: var(--mono-bg);
+    border: 1px solid var(--mono-border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--mono-text);
+  }
+  .readout .fila {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--mono-border);
+    font-size: 0.92rem;
+    word-break: break-all;
+  }
+  .readout .fila:last-child { border-bottom: none; }
+  .readout .etiqueta { color: color-mix(in srgb, var(--mono-text) 65%, transparent); }
+  .readout .valor { text-align: right; }
+  .readout .valor small { display: block; opacity: 0.7; font-size: 0.72rem; text-align: right; }
+  .vacio {
+    color: color-mix(in srgb, var(--mono-text) 55%, transparent);
+    font-size: 0.88rem;
+  }
+
+  textarea#json-salida {
+    width: 100%;
+    margin-top: 10px;
+    min-height: 130px;
+    background: var(--mono-bg);
+    color: var(--mono-text);
+    border: 1px solid var(--mono-border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.78rem;
+    resize: vertical;
+  }
+  button.secundaria {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  .copiado-msg {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--ok-text);
+  }
+  .error-box {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  .disclaimer {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .disclaimer strong { color: var(--text); }
+  .disclaimer ul { margin: 6px 0 0; padding-left: 18px; }
+  .disclaimer li { margin-bottom: 4px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section { transition: border-color 0.15s ease; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Muestra de ubicación</h1>
+  <p class="subtitulo">Lectura cruda del GPS del teléfono — sin servidor, sin redondeo, sin guardarla</p>
+</header>
+
+<section>
+  <h2>Diagnóstico de esta página, ahora mismo</h2>
+  <div class="pills" id="diag-pills"></div>
+  <p class="diag-nota" id="diag-nota"></p>
+</section>
+
+<section>
+  <h2>Tomar la lectura</h2>
+  <button class="principal" id="btn-leer">Tomar lectura de ubicación ahora</button>
+  <div class="params">
+    <span>enableHighAccuracy: true</span>
+    <span>maximumAge: 0 (sin caché)</span>
+    <span>timeout: 20 000 ms (finito)</span>
+  </div>
+</section>
+
+<section>
+  <h2>Resultado</h2>
+  <div class="readout" id="readout">
+    <p class="vacio">Sin lectura todavía. Nada se toma hasta que presiones el botón de arriba.</p>
+  </div>
+  <div id="error-area" hidden></div>
+  <div id="exportar-area" hidden>
+    <h2 style="margin-top:14px">Para guardar como archivo local</h2>
+    <p class="diag-nota">Copia este texto y pégalo en un archivo de tu inventario aislado — esta página no lo envía ni lo guarda por sí misma.</p>
+    <textarea id="json-salida" class="mono" readonly rows="8"></textarea>
+    <button class="secundaria" id="btn-copiar">Copiar JSON</button>
+    <p class="copiado-msg" id="copiado-msg" hidden>Copiado al portapapeles.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Qué es esto, exactamente</h2>
+  <div class="disclaimer">
+    <p>Esta lectura <strong>no es una verificación de GPS ni del reloj</strong> del teléfono: es el valor crudo que <code class="mono">navigator.geolocation</code> devolvió en ese instante, con la incertidumbre que el propio dispositivo declaró como precisión.</p>
+    <ul>
+      <li><strong>Sin servidor:</strong> todo el cálculo ocurre en este navegador. La página no hace ninguna petición de red — puedes verificarlo leyendo el código fuente, que no contiene ningún <code class="mono">fetch</code> ni script externo.</li>
+      <li><strong>Sin guardar:</strong> el resultado vive sólo en esta pestaña, mientras esté abierta. Recargar o cerrar la página lo borra.</li>
+      <li><strong>Sin redondear:</strong> latitud, longitud, precisión y hora se muestran con el mismo texto que produce el navegador internamente — nunca con <code class="mono">toFixed</code> ni ningún ajuste manual.</li>
+      <li><strong>Abrir esta página no autoriza tomar la muestra:</strong> eso ocurre únicamente al presionar el botón, y sólo entonces el sistema pide permiso de ubicación.</li>
+      <li><strong>Sin inicio de sesión:</strong> esta página es HTML/CSS/JS estático servido por GitHub Pages — no requiere ninguna cuenta para abrirse.</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function pill(estado, texto) {
+    var span = document.createElement("span");
+    span.className = "pill " + estado;
+    var dot = document.createElement("span");
+    dot.className = "dot";
+    span.appendChild(dot);
+    span.appendChild(document.createTextNode(texto));
+    return span;
+  }
+
+  function ejecutarDiagnostico() {
+    var cont = document.getElementById("diag-pills");
+    var nota = document.getElementById("diag-nota");
+    var boton = document.getElementById("btn-leer");
+    cont.innerHTML = "";
+
+    var protocolo = location.protocol;
+    var esHttps = protocolo === "https:";
+    cont.appendChild(pill(esHttps ? "ok" : "warn", "Protocolo: " + protocolo));
+
+    var contextoSeguro = !!window.isSecureContext;
+    cont.appendChild(pill(contextoSeguro ? "ok" : "danger", contextoSeguro ? "Contexto seguro" : "Contexto NO seguro"));
+
+    var nivelSuperior = true;
+    try { nivelSuperior = window.top === window.self; } catch (e) { nivelSuperior = false; }
+    cont.appendChild(pill(nivelSuperior ? "ok" : "warn", nivelSuperior ? "Pestaña propia" : "Dentro de otra página"));
+
+    var apiDisponible = "geolocation" in navigator;
+    cont.appendChild(pill(apiDisponible ? "ok" : "danger", apiDisponible ? "API de ubicación disponible" : "Sin API de ubicación"));
+
+    var avisos = [];
+    if (!esHttps) avisos.push("no está servida por HTTPS");
+    if (!contextoSeguro) avisos.push("el navegador no la considera un contexto seguro");
+    if (!nivelSuperior) avisos.push("parece estar embebida dentro de otra página — ábrela como pestaña propia de Safari");
+    if (!apiDisponible) avisos.push("este navegador no expone geolocalización");
+
+    if (avisos.length) {
+      nota.textContent = "Antes de tomar la lectura: " + avisos.join("; ") + ".";
+      boton.disabled = true;
+    } else {
+      nota.textContent = "Todo listo: HTTPS, contexto seguro, pestaña propia, API disponible.";
+      boton.disabled = false;
+    }
+  }
+
+  function mostrarError(err) {
+    var area = document.getElementById("error-area");
+    var nombres = { 1: "PERMISSION_DENIED", 2: "POSITION_UNAVAILABLE", 3: "TIMEOUT" };
+    var nombre = nombres[err.code] || ("código " + err.code);
+    area.innerHTML = "";
+    var box = document.createElement("div");
+    box.className = "error-box";
+    box.textContent = "No se obtuvo una lectura (" + nombre + "): " + (err.message || "sin detalle del navegador") + ".";
+    area.appendChild(box);
+    area.hidden = false;
+  }
+
+  function textoCrudo(valor) {
+    // String()/toString() en JS produce la representación decimal más
+    // corta que reconstruye el mismo número de 64 bits: no es un
+    // redondeo, es la forma estándar de imprimir el valor exacto que
+    // el navegador calculó. Nunca se usa toFixed ni Math.round aquí.
+    return String(valor);
+  }
+
+  function fila(etiqueta, valorPrincipal, notaSecundaria) {
+    var div = document.createElement("div");
+    div.className = "fila mono";
+    var e = document.createElement("span");
+    e.className = "etiqueta";
+    e.textContent = etiqueta;
+    var v = document.createElement("span");
+    v.className = "valor";
+    v.textContent = valorPrincipal;
+    if (notaSecundaria) {
+      var s = document.createElement("small");
+      s.textContent = notaSecundaria;
+      v.appendChild(s);
+    }
+    div.appendChild(e);
+    div.appendChild(v);
+    return div;
+  }
+
+  function mostrarResultado(posicion) {
+    document.getElementById("error-area").hidden = true;
+
+    var c = posicion.coords;
+    var readout = document.getElementById("readout");
+    readout.innerHTML = "";
+    readout.appendChild(fila("Latitud", textoCrudo(c.latitude)));
+    readout.appendChild(fila("Longitud", textoCrudo(c.longitude)));
+    readout.appendChild(fila("Precisión horizontal", textoCrudo(c.accuracy) + " m"));
+    readout.appendChild(fila(
+      "Timestamp (epoch ms)",
+      textoCrudo(posicion.timestamp),
+      "≈ " + new Date(posicion.timestamp).toISOString() + " (derivado, no es el valor original)"
+    ));
+
+    var salida = {
+      latitud: c.latitude,
+      longitud: c.longitude,
+      precision_horizontal_metros: c.accuracy,
+      timestamp_epoch_ms: posicion.timestamp,
+      timestamp_iso_derivado: new Date(posicion.timestamp).toISOString(),
+      parametros_solicitud: { enableHighAccuracy: true, maximumAge: 0, timeout_ms: 20000 },
+      nota: "Lectura cruda de navigator.geolocation.getCurrentPosition; no es una verificación de GPS ni de reloj."
+    };
+    document.getElementById("json-salida").value = JSON.stringify(salida, null, 2);
+    document.getElementById("copiado-msg").hidden = true;
+    document.getElementById("exportar-area").hidden = false;
+  }
+
+  function tomarLectura() {
+    var boton = document.getElementById("btn-leer");
+    var readout = document.getElementById("readout");
+    document.getElementById("error-area").hidden = true;
+    document.getElementById("exportar-area").hidden = true;
+    boton.disabled = true;
+    readout.innerHTML = '<p class="vacio">Leyendo… puede tardar unos segundos (hasta 20&nbsp;s).</p>';
+
+    navigator.geolocation.getCurrentPosition(
+      function (posicion) {
+        boton.disabled = false;
+        mostrarResultado(posicion);
+      },
+      function (err) {
+        boton.disabled = false;
+        readout.innerHTML = '<p class="vacio">Sin lectura. Ver el detalle del error abajo.</p>';
+        mostrarError(err);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+    );
+  }
+
+  document.getElementById("btn-leer").addEventListener("click", tomarLectura);
+
+  document.getElementById("btn-copiar").addEventListener("click", function () {
+    var area = document.getElementById("json-salida");
+    var msg = document.getElementById("copiado-msg");
+    function marcarCopiado() {
+      msg.textContent = "Copiado al portapapeles.";
+      msg.hidden = false;
+    }
+    function marcarManual() {
+      area.focus();
+      area.select();
+      msg.textContent = "No se pudo copiar automáticamente: el texto ya está seleccionado, cópialo manualmente.";
+      msg.hidden = false;
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(area.value).then(marcarCopiado, marcarManual);
+      } else {
+        marcarManual();
+      }
+    } catch (e) {
+      marcarManual();
+    }
+  });
+
+  ejecutarDiagnostico();
+})();
+</script>
+</body>
+</html>
